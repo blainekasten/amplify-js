@@ -913,7 +913,7 @@ PostOptionalId.copyOf(p2, d => {
 
 //#endregion
 
-//#region CustomId
+//#region CustomId - multi
 
 type PostCustomIdMetaData = {
 	identifier: CustomIdentifier<'tenantId' | 'postId'>;
@@ -952,6 +952,41 @@ PostCustomId.copyOf(p3, d => {
 
 //#endregion
 
+//#region CustomId - single renamed
+
+type PostCustomIdRenamedMetaData = {
+	identifier: CustomIdentifier<'myId'>;
+	readOnlyFields: 'createdAt' | 'updatedAt';
+};
+declare class PostCustomIRenamed {
+	readonly myId: string;
+	readonly title: string;
+	readonly createdAt?: string;
+	readonly updatedAt?: string;
+	constructor(init: ModelInit<PostCustomIRenamed, PostCustomIdRenamedMetaData>);
+	static copyOf(
+		source: PostCustomIRenamed,
+		mutator: (
+			draft: MutableModel<PostCustomIRenamed, PostCustomIdRenamedMetaData>
+		) => MutableModel<PostCustomIRenamed, PostCustomIdRenamedMetaData> | void
+	): PostCustomIRenamed;
+}
+
+const p3b = new PostCustomIRenamed({
+	myId: 'sadasd',
+	// d.tenantId = 'dsdsd'; // This should fail with a compiler error
+	title: 'asdasdasd',
+});
+
+PostCustomIRenamed.copyOf(p3b, d => {
+	// d.id; // This should fail with a compiler error
+	d.myId;
+	// d.myId = 'dsdsd'; // This should fail with a compiler error
+	d.title = 'iuiouoiuo';
+});
+
+//#endregion
+
 //#region BackwardsCompatible
 
 type PostNoIdMetaData = {
@@ -983,3 +1018,31 @@ PostNoId.copyOf(p4, d => {
 });
 
 //#endregion
+
+declare function XXX<
+	T extends PersistentModel<K>,
+	K extends PersistentModelMetaData = DefaultPersistentModelMetaData
+>(
+	modelConstructor: PersistentModelConstructor<T, K>,
+	idOrCriteria?:
+		| IdentifierFields<K['identifier']>
+		| (K['identifier'] extends CustomIdentifier<any> ? never : string)
+		| ProducerModelPredicate<T>
+		| typeof PredicateAll,
+	paginationProducer?: ProducerPaginationInput<T>
+): T;
+
+export type DefaultPersistentModelMetaData = {
+	identifier: ManagedIdentifier;
+	readOnlyFields: 'createdAt' | 'updatedAt';
+};
+
+const _x11 = XXX(PostNoId, '');
+const _x1 = XXX(PostNoId, { id: '' });
+const _x2 = XXX(PostManagedId, { id: '' });
+const _x3 = XXX(PostOptionalId, { id: '' });
+// const _x4aa = XXX(PostCustomId, 'sdsdsdssdds'); // This should fail
+const _x4a = XXX(PostCustomId, { tenantId: '', postId: '' });
+// const _x4b = XXX(PostCustomIRenamed, 'ddddd'); // This should fail
+// const _x4c = XXX(PostCustomIRenamed, 'ddddd', 'dddddd'); // This should fail
+const _x4 = XXX(PostCustomId, _x4a);
